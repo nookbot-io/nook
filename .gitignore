@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment and secrets
+.env
+
+# Runtime data
+data/
+
+# Tests (contain local config)
+tests/
+
+# OS files
+.DS_Store
+Thumbs.db
