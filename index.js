@@ -18,7 +18,7 @@ const app = express();
 // Middleware
 const corsOrigin = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : ['http://localhost:3001'];
+  : true;
 app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json());
 
@@ -55,14 +55,14 @@ async function start() {
     }
   } else if (!isConfigured()) {
     console.log('Nook Agent is not configured.');
-    console.log('Open http://localhost:3001 in your browser to complete setup.');
+    console.log('Open the web UI in your browser to complete setup.');
   }
 
   const settings = loadSettings();
   const port = settings.port || 3001;
 
   app.listen(port, () => {
-    console.log(`Nook Agent running on http://localhost:${port}`);
+    console.log(`Nook Agent running on port ${port}`);
 
     // Auto-start Telegram bot if configured
     if (settings.telegramEnabled && settings.telegramBotToken) {
