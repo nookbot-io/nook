@@ -85,13 +85,13 @@ function requireAuth(req, res, next) {
   next();
 }
 
-function setCookie(res, token) {
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+function setCookie(res, token, req) {
+  const secure = req && (req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
   res.setHeader('Set-Cookie', `nook_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${getMaxAge()}${secure}`);
 }
 
-function clearCookie(res) {
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+function clearCookie(res, req) {
+  const secure = req && (req.protocol === 'https' || req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
   res.setHeader('Set-Cookie', `nook_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure}`);
 }
 

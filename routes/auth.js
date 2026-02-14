@@ -33,13 +33,13 @@ router.post('/auth/login', (req, res) => {
   }
 
   recordSuccess(ip);
-  setCookie(res, result.token);
+  setCookie(res, result.token, req);
   res.json({ success: true });
 });
 
 router.post('/auth/logout', (req, res) => {
   logout(req.headers.cookie);
-  clearCookie(res);
+  clearCookie(res, req);
   res.json({ success: true });
 });
 

@@ -62,7 +62,7 @@ router.post('/setup/complete', (req, res) => {
   const ip = req.ip || req.socket?.remoteAddress || 'unknown';
   const result = login(password, settings, ip);
   if (result.success) {
-    setCookie(res, result.token);
+    setCookie(res, result.token, req);
   }
 
   res.json({ success: true, configured: isConfigured() });
