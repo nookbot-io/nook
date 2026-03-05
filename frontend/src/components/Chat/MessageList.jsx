@@ -8,6 +8,8 @@ export default function MessageList({
   streaming,
   streamingText,
   activeToolCalls,
+  sessionId,
+  onSend,
 }) {
   const bottomRef = useRef(null);
   const containerRef = useRef(null);
@@ -36,7 +38,7 @@ export default function MessageList({
     <div ref={containerRef} className="h-full overflow-y-auto px-4 py-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {messages.map((msg, i) => (
-          <MessageBubble key={i} message={msg} />
+          <MessageBubble key={i} message={msg} sessionId={sessionId} messageIndex={i} onSend={onSend} />
         ))}
 
         {/* Active tool calls */}

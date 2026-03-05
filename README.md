@@ -30,13 +30,17 @@ Ask things like *"What's the price of SOL?"*, *"Find tokens with over $1M volume
 ## Features
 
 - **AI-powered analysis** — natural language to API calls via LLM tool calling
-- **Multi-provider LLM** — supports OpenAI (GPT-5.x) and Anthropic (Claude) with a unified interface
+- **Multi-provider LLM** — supports OpenAI, Anthropic, and Ollama (local models) with a unified interface
 - **Streaming responses** — real-time SSE streaming in the web UI
-- **Telegram bot** — optional Telegram integration with MarkdownV2 formatting
+- **Telegram bot** — full-featured bot with commands, inline keyboards, progress indicators, and follow-up suggestions
 - **31 Solana data endpoints** — search, prices, tokens, wallets, trades, charts, PnL, top traders, stats
 - **Smart tool selection** — the agent picks the right endpoints and chains multiple calls to answer complex questions
+- **Follow-up suggestions** — contextual follow-up questions after every response, clickable in both web UI and Telegram
+- **Response ratings** — thumbs up/down feedback on every response for quality tracking
+- **Prompt presets** — save and reuse common queries from the web UI or Telegram
 - **Token resolution** — automatically resolves symbols to addresses so you can ask about tokens by name
 - **React frontend** — clean chat UI with dark/light theme, session history, and settings panel
+- **SQLite sessions** — conversations persist across server restarts
 - **Setup wizard** — guided first-run configuration in the browser
 - **Self-hosted** — runs on your machine, your keys never leave your server
 
@@ -44,7 +48,7 @@ Ask things like *"What's the price of SOL?"*, *"Find tokens with over $1M volume
 
 - **Node.js 22+**
 - **Nook API key** — get a free key at [nookbot.io](https://nookbot.io)
-- **LLM API key** — [OpenAI](https://platform.openai.com) or [Anthropic](https://console.anthropic.com)
+- **LLM API key** — [OpenAI](https://platform.openai.com), [Anthropic](https://console.anthropic.com), or run local models with [Ollama](https://ollama.com)
 
 ## Quick Start
 
@@ -129,11 +133,13 @@ All endpoints are accessible via REST with your API key in the `x-api-key` heade
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `LLM_PROVIDER` | No | `openai` | `openai` or `anthropic` |
+| `LLM_PROVIDER` | No | `openai` | `openai`, `anthropic`, or `ollama` |
 | `OPENAI_API_KEY` | If OpenAI | — | OpenAI API key |
 | `OPENAI_MODEL` | No | `gpt-5.2` | OpenAI model name |
 | `ANTHROPIC_API_KEY` | If Anthropic | — | Anthropic API key |
 | `ANTHROPIC_MODEL` | No | `claude-sonnet-4-5` | Anthropic model name |
+| `OLLAMA_URL` | No | `http://localhost:11434/v1` | Ollama API base URL |
+| `OLLAMA_MODEL` | No | `llama3.1` | Ollama model name |
 | `NOOK_API_URL` | No | `https://api.nookbot.io` | Nook API base URL |
 | `NOOK_API_KEY` | Yes | — | Your Nook API key |
 | `AGENT_PASSWORD` | Yes | — | Password for the web UI |
@@ -153,6 +159,21 @@ You can also configure everything through the web UI settings page or the setup 
 4. Add your chat ID to `TELEGRAM_ALLOWED_CHAT_IDS` (send `/start` to the bot and check the logs for your chat ID)
 
 You can also configure Telegram through the agent web UI settings page.
+
+### Bot Commands
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show help and available commands |
+| `/new` | Start a new conversation |
+| `/presets` | Quick prompts for common queries |
+| `/settings` | Show current provider and model |
+| `/price <token>` | Quick price check |
+| `/trending` | What's trending right now |
+| `/wallet <addr>` | Wallet overview |
+| `/cancel` | Cancel active request |
+
+The bot also supports inline keyboard buttons for follow-up suggestions, response ratings, and pagination for long responses. Solana addresses are auto-detected and looked up when sent as plain text.
 
 ## Architecture
 
@@ -175,7 +196,8 @@ You can also configure Telegram through the agent web UI settings page.
   │ ┌──────────────┐  │
   │ │  LLM Engine  │  │
   │ │  OpenAI /    │  │
-  │ │  Anthropic   │  │
+  │ │  Anthropic / │  │
+  │ │  Ollama      │  │
   │ └──────────────┘  │
   │  React UI         │
   │  Telegram Bot     │
@@ -188,7 +210,8 @@ You can also configure Telegram through the agent web UI settings page.
 |-----------|-----------|
 | Server | Express 5, Node.js |
 | Frontend | React 19, Vite, Tailwind CSS v4 |
-| LLM providers | OpenAI SDK, Anthropic SDK |
+| LLM providers | OpenAI SDK, Anthropic SDK, Ollama |
+| Database | SQLite (better-sqlite3) |
 | Telegram | node-telegram-bot-api |
 | Streaming | Server-Sent Events (SSE) |
 
@@ -210,7 +233,10 @@ nook/
 │   ├── toolRegistry.js    # API endpoints → LLM tool definitions
 │   ├── endpoints.js       # 31 Nook API endpoint definitions
 │   ├── nookClient.js      # Nook API client
-│   ├── providers/         # OpenAI + Anthropic adapters
+│   ├── providers/         # OpenAI + Anthropic + Ollama adapters
+│   ├── telegram.js        # Telegram bot orchestrator
+│   ├── ratings.js         # Response rating system
+│   ├── presets.js         # Prompt preset management
 │   └── ...
 ├── frontend/              # React + Vite + Tailwind
 ├── public/                # Pre-built frontend (ships with repo)

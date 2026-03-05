@@ -3,6 +3,7 @@ const { runAgent } = require('../lib/agent');
 const { runAgentStream } = require('../lib/agentStream');
 const { loadSettings } = require('../lib/settings');
 const { listSessions, getSession, deleteSession, getMessages } = require('../lib/sessions');
+const { saveRating, getRatings } = require('../lib/ratings');
 const { agentRateLimit } = require('../middleware/agentRateLimit');
 
 const router = Router();
@@ -95,6 +96,21 @@ router.delete('/sessions/:id', (req, res) => {
     return res.status(404).json({ error: 'Session not found' });
   }
   res.json({ success: true });
+});
+
+// Ratings
+router.post('/rate', (req, res) => {
+  const { sessionId, messageIndex, rating } = req.body || {};
+  if (!sessionId || messageIndex === undefined || !['up', 'down'].includes(rating)) {
+    return res.status(400).json({ error: 'sessionId, messageIndex, and rating (up/down) are required' });
+  }
+  const result = saveRating(sessionId, messageIndex, rating);
+  res.json(result);
+});
+
+router.get('/ratings/:sessionId', (req, res) => {
+  const ratings = getRatings(req.params.sessionId);
+  res.json(ratings);
 });
 
 module.exports = { prefix: '/chat', router };

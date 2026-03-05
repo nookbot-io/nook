@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Copy, Check, ThumbsUp, ThumbsDown, Share2 } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { apiPost } from '../../api';
 import MarkdownRenderer from '../shared/MarkdownRenderer';
 import ToolCallBlock from './ToolCallBlock';
+import FollowUpSuggestions, { parseFollowUps } from './FollowUpSuggestions';
 
 function timeAgo(ts) {
   if (!ts) return '';
@@ -14,13 +17,49 @@ function timeAgo(ts) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, sessionId, messageIndex, onSend }) {
   const [copied, setCopied] = useState(false);
+  const [rating, setRating] = useState(message.rating || null);
+  const contentRef = useRef(null);
+  const parsed = useMemo(
+    () => message.role === 'assistant' ? parseFollowUps(message.content) : null,
+    [message.content, message.role]
+  );
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = useCallback(async () => {
+    if (!contentRef.current) return;
+    try {
+      const dataUrl = await toPng(contentRef.current, {
+        backgroundColor: '#1a1a2e',
+        pixelRatio: 2,
+        style: { padding: '24px' },
+      });
+      const link = document.createElement('a');
+      link.download = `nook-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // Fallback: copy text
+      navigator.clipboard.writeText(message.content);
+    }
+  }, [message.content]);
+
+  const handleRate = async (value) => {
+    const newRating = rating === value ? null : value;
+    setRating(newRating);
+    if (newRating && sessionId) {
+      try {
+        await apiPost('/chat/rate', { sessionId, messageIndex, rating: newRating });
+      } catch {
+        // Silently fail — rating is non-critical
+      }
+    }
   };
 
   if (message.role === 'user') {
@@ -49,10 +88,13 @@ export default function MessageBubble({ message }) {
               ))}
             </div>
           )}
-          <div className="text-text-primary">
-            <MarkdownRenderer content={message.content} />
+          <div ref={contentRef} className="text-text-primary">
+            <MarkdownRenderer content={parsed?.text || message.content} />
           </div>
-          <div className="flex items-center gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          {parsed?.suggestions?.length > 0 && onSend && (
+            <FollowUpSuggestions suggestions={parsed.suggestions} onSend={onSend} />
+          )}
+          <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={handleCopy}
               className="p-1 rounded hover:bg-elevated transition-colors text-text-tertiary hover:text-text-secondary"
@@ -60,9 +102,43 @@ export default function MessageBubble({ message }) {
             >
               {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
-            <span className="text-xs text-text-tertiary">
+            <button
+              onClick={() => handleRate('up')}
+              className={`p-1 rounded transition-colors ${
+                rating === 'up'
+                  ? 'text-success bg-success/10'
+                  : 'text-text-tertiary hover:text-text-secondary hover:bg-elevated'
+              }`}
+              title="Good response"
+            >
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => handleRate('down')}
+              className={`p-1 rounded transition-colors ${
+                rating === 'down'
+                  ? 'text-error bg-error/10'
+                  : 'text-text-tertiary hover:text-text-secondary hover:bg-elevated'
+              }`}
+              title="Bad response"
+            >
+              <ThumbsDown className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleShare}
+              className="p-1 rounded hover:bg-elevated transition-colors text-text-tertiary hover:text-text-secondary"
+              title="Export as image"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-xs text-text-tertiary ml-1">
               {timeAgo(message.timestamp)}
             </span>
+            {message.usage && (
+              <span className="text-xs text-text-tertiary ml-1" title={`Prompt: ${message.usage.promptTokens?.toLocaleString()} | Completion: ${message.usage.completionTokens?.toLocaleString()}`}>
+                {message.usage.totalTokens?.toLocaleString()} tokens
+              </span>
+            )}
           </div>
         </div>
       </div>

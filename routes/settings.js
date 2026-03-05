@@ -16,6 +16,7 @@ router.put('/', (req, res) => {
   // Only update fields that are present and not masked
   const fields = [
     'provider', 'openaiApiKey', 'openaiModel', 'anthropicApiKey', 'anthropicModel',
+    'ollamaUrl', 'ollamaModel',
     'nookApiUrl', 'nookApiKey', 'maxToolCalls', 'temperature', 'maxTokens', 'systemPrompt',
     'agentRateLimit', 'telegramBotToken', 'telegramEnabled',
     'sessionMaxAgeHours', 'maxLoginAttempts', 'loginLockoutMinutes',

@@ -101,6 +101,8 @@ export default function ChatLayout({
               streaming={streaming}
               streamingText={streamingText}
               activeToolCalls={activeToolCalls}
+              sessionId={activeSessionId}
+              onSend={onSendMessage}
             />
           ) : (
             <WelcomeView onSend={onSendMessage} />

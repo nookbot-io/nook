@@ -1,6 +1,6 @@
 {
   "name": "nook-agent",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Open-source AI chat assistant for Solana - uses LLM tool calling to query real-time blockchain data via the Nook API",
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "axios": "^1.7.0",
+    "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.2.1",

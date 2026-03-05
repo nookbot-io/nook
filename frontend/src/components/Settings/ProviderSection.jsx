@@ -4,6 +4,13 @@ import { Eye, EyeOff } from 'lucide-react';
 const MODEL_LISTS = {
   openai: ['gpt-5.2', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'],
   anthropic: ['claude-sonnet-4-5', 'claude-haiku-4-5', 'claude-opus-4-5', 'claude-opus-4-6', 'claude-sonnet-4-0', 'claude-3-7-sonnet-latest'],
+  ollama: ['llama3.1', 'llama3.2', 'mistral', 'mixtral', 'qwen2.5', 'gemma2', 'deepseek-r1', 'phi3', 'codellama'],
+};
+
+const PROVIDER_LABELS = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  ollama: 'Ollama',
 };
 
 export default function ProviderSection({ draft, onChange }) {
@@ -13,10 +20,23 @@ export default function ProviderSection({ draft, onChange }) {
   const [customModel, setCustomModel] = useState('');
 
   const provider = draft.provider;
-  const activeModel = provider === 'openai' ? draft.openaiModel : draft.anthropicModel;
-  const modelList = MODEL_LISTS[provider];
-  const apiKeyField = provider === 'openai' ? 'openaiApiKey' : 'anthropicApiKey';
-  const modelField = provider === 'openai' ? 'openaiModel' : 'anthropicModel';
+
+  const getModelField = (p) => {
+    if (p === 'openai') return 'openaiModel';
+    if (p === 'anthropic') return 'anthropicModel';
+    return 'ollamaModel';
+  };
+
+  const getApiKeyField = (p) => {
+    if (p === 'openai') return 'openaiApiKey';
+    if (p === 'anthropic') return 'anthropicApiKey';
+    return null;
+  };
+
+  const modelField = getModelField(provider);
+  const apiKeyField = getApiKeyField(provider);
+  const activeModel = draft[modelField];
+  const modelList = MODEL_LISTS[provider] || [];
 
   const handleCustomModelSubmit = () => {
     if (!customModel.trim()) return;
@@ -31,7 +51,7 @@ export default function ProviderSection({ draft, onChange }) {
       <div>
         <label className="label">Provider</label>
         <div className="flex gap-1 p-1 bg-elevated rounded-lg">
-          {['openai', 'anthropic'].map((p) => (
+          {['openai', 'anthropic', 'ollama'].map((p) => (
             <button
               key={p}
               onClick={() => onChange({ provider: p })}
@@ -41,35 +61,52 @@ export default function ProviderSection({ draft, onChange }) {
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              {p === 'openai' ? 'OpenAI' : 'Anthropic'}
+              {PROVIDER_LABELS[p]}
             </button>
           ))}
         </div>
       </div>
 
-      {/* API Key */}
-      <div>
-        <label className="label">
-          {provider === 'openai' ? 'OpenAI' : 'Anthropic'} API Key
-        </label>
-        <div className="relative">
-          <input
-            type={showApiKey ? 'text' : 'password'}
-            value={draft[apiKeyField] || ''}
-            onChange={(e) => onChange({ [apiKeyField]: e.target.value })}
-            className="input-field pr-10"
-            placeholder={provider === 'openai' ? 'sk-...' : 'sk-ant-...'}
-          />
-          <button
-            type="button"
-            onClick={() => setShowApiKey(!showApiKey)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-tertiary hover:text-text-secondary"
-          >
-            {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
+      {/* API Key (OpenAI / Anthropic only) */}
+      {apiKeyField && (
+        <div>
+          <label className="label">
+            {PROVIDER_LABELS[provider]} API Key
+          </label>
+          <div className="relative">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              value={draft[apiKeyField] || ''}
+              onChange={(e) => onChange({ [apiKeyField]: e.target.value })}
+              className="input-field pr-10"
+              placeholder={provider === 'openai' ? 'sk-...' : 'sk-ant-...'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-tertiary hover:text-text-secondary"
+            >
+              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-text-tertiary mt-1">Required for LLM tool calling</p>
         </div>
-        <p className="text-xs text-text-tertiary mt-1">Required for LLM tool calling</p>
-      </div>
+      )}
+
+      {/* Ollama URL */}
+      {provider === 'ollama' && (
+        <div>
+          <label className="label">Ollama URL</label>
+          <input
+            type="text"
+            value={draft.ollamaUrl || ''}
+            onChange={(e) => onChange({ ollamaUrl: e.target.value })}
+            className="input-field"
+            placeholder="http://localhost:11434/v1"
+          />
+          <p className="text-xs text-text-tertiary mt-1">Ollama server URL (must be running with a model that supports tool calling)</p>
+        </div>
+      )}
 
       {/* Model */}
       <div>

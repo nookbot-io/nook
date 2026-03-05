@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const setupRoutes = require('./routes/setup');
 const chatRoutes = require('./routes/chat');
 const settingsRoutes = require('./routes/settings');
+const presetsRoutes = require('./routes/presets');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use(setupRoutes);
 // Protected routes — require auth
 app.use(chatRoutes.prefix, requireAuth, chatRoutes.router);
 app.use(settingsRoutes.prefix, requireAuth, settingsRoutes.router);
+app.use(presetsRoutes.prefix, requireAuth, presetsRoutes.router);
 
 // Error handler
 app.use((err, _req, res, _next) => {

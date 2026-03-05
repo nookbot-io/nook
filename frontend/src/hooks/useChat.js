@@ -85,6 +85,7 @@ export function useChat() {
     let sessionId = activeSessionId;
     let finalText = '';
     const toolCalls = [];
+    let tokenUsage = null;
 
     try {
       await streamChat({ message: text, sessionId }, (event) => {
@@ -111,6 +112,16 @@ export function useChat() {
             setActiveToolCalls([...toolCalls]);
             break;
           }
+          case 'usage':
+            if (event.usage) {
+              if (!tokenUsage) {
+                tokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+              }
+              tokenUsage.promptTokens += event.usage.promptTokens || 0;
+              tokenUsage.completionTokens += event.usage.completionTokens || 0;
+              tokenUsage.totalTokens += event.usage.totalTokens || 0;
+            }
+            break;
           case 'error':
             finalText += `\n\n**Error:** ${event.message}`;
             setStreamingText(finalText);
@@ -128,6 +139,9 @@ export function useChat() {
         const assistantMsg = { role: 'assistant', content: finalText, timestamp: Date.now() };
         if (toolCalls.length) {
           assistantMsg.toolCalls = toolCalls;
+        }
+        if (tokenUsage) {
+          assistantMsg.usage = tokenUsage;
         }
         setMessages((prev) => [...prev, assistantMsg]);
       }
